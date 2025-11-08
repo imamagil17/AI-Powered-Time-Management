@@ -29,7 +29,7 @@
                     
                     {{-- Tombol Tambah Proyek --}}
                     <!-- 👇 Animasi ditambahkan di sini -->
-                    <a href="#" class="mb-6 inline-flex items-center px-4 py-2 
+                    <a href="{{ route('projects.create') }}" class="mb-6 inline-flex items-center px-4 py-2 
                                    bg-primary-600 border border-transparent 
                                    rounded-md font-semibold text-xs text-white uppercase tracking-widest 
                                    hover:bg-primary-700 
@@ -44,8 +44,8 @@
                     {{-- Grid untuk Kartu Proyek --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         
-                        {{-- Kita loop data palsu yang kita kirim dari route --}}
-                        @foreach ($projects as $project)
+                        {{-- Loop through actual project data --}}
+                        @forelse ($projects as $project)
                             
                             <!-- 👇 Animasi ditambahkan di sini dengan delay bertingkat (staggered) -->
                             <div class="bg-white dark:bg-secondary border border-gray-200 dark:border-gray-700 rounded-lg shadow-md p-5 flex flex-col justify-between
@@ -53,49 +53,66 @@
                                  style="animation-delay: {{ 0.2 + ($loop->index * 0.1) }}s;">
                                 <div>
                                     <h3 class="text-lg font-bold text-gray-900 dark:text-textlight mb-2">
-                                        {{ $project['name'] }}
+                                        {{ $project->name }}
                                     </h3>
 
                                     <div class="mb-3">
-                                        @if ($project['status'] == 'Completed')
+                                        @if (strtolower($project->status) == 'completed')
                                             <span class="inline-block bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
                                                 Completed
                                             </span>
-                                        @elseif ($project['status'] == 'In Progress')
+                                        @elseif (strtolower($project->status) == 'in progress')
                                             <span class="inline-block bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
                                                 In Progress
                                             </span>
                                         @else
                                             <span class="inline-block bg-gray-100 text-gray-800 dark:bg-gray-700/50 dark:text-gray-300 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                                                Pending
+                                                {{ ucfirst(str_replace('_', ' ', $project->status)) }}
                                             </span>
                                         @endif
                                     </div>
 
-                                    {{-- Progress Bar --}}
+                                    {{-- Progress Bar (calculate based on tasks) --}}
                                     <div class="mb-2">
                                         <div class="flex justify-between mb-1">
                                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Progres</span>
-                                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $project['progress'] }}%</span>
+                                            @php
+                                                $totalTasks = $project->tasks->count();
+                                                $completedTasks = $project->tasks->where('status', 'completed')->count();
+                                                $progress = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
+                                            @endphp
+                                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ number_format($progress, 0) }}%</span>
                                         </div>
                                         <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                                            <div class="bg-primary-600 h-2.5 rounded-full" style="width: {{ $project['progress'] }}%"></div>
+                                            <div class="bg-primary-600 h-2.5 rounded-full" style="width: {{ $progress }}%"></div>
                                         </div>
                                     </div>
 
-                                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                                        Tenggat: {{ \Carbon\Carbon::parse($project['due_date'])->format('d M Y') }}
-                                    </p>
+                                    @if($project->due_date)
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                            Tenggat: {{ \Carbon\Carbon::parse($project->due_date)->format('d M Y') }}
+                                        </p>
+                                    @endif
                                 </div>
 
                                 {{-- Tombol Aksi --}}
-                                <div>
-                                    <a href="#" class="font-medium text-primary-600 dark:text-primary-500 hover:underline">
+                                <div class="flex justify-between">
+                                    <a href="{{ route('projects.show', $project) }}" class="font-medium text-primary-600 dark:text-primary-500 hover:underline">
                                         Lihat Detail
+                                    </a>
+                                    <a href="{{ route('projects.edit', $project) }}" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">
+                                        Edit
                                     </a>
                                 </div>
                             </div>
-                        @endforeach
+                        @empty
+                            <div class="col-span-full text-center py-12">
+                                <p class="text-gray-500 dark:text-gray-400 text-lg">Anda belum memiliki proyek.</p>
+                                <a href="{{ route('projects.create') }}" class="mt-4 inline-block bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700">
+                                    Buat Proyek Pertama Anda
+                                </a>
+                            </div>
+                        @endforelse
 
                     </div>
 
